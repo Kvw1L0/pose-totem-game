@@ -1,0 +1,19 @@
+{
+  "name": "mirror-match",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "^1.0.1",
+    "canvas-confetti": "^1.9.3",
+    "qrcode": "^1.5.3"
+  },
+  "devDependencies": {
+    "vite": "^5.4.2"
+  }
+}

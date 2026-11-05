@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Mirror Match - Batalla 3 Jugadores BTL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Controles discretos de Kiosco -->
+    <div class="kiosk-controls interactive">
+      <select id="camera-select" class="kiosk-btn" title="Seleccionar Cámara">
+        <option value="">Cámara Predeterminada</option>
+      </select>
+      <button id="btn-sound" class="kiosk-btn" title="Alternar Sonido">🔊 Sonido</button>
+      <button id="btn-fullscreen" class="kiosk-btn" title="Pantalla Completa">⛶ Fullscreen</button>
+    </div>
+
+    <!-- Escenario Principal -->
+    <div class="stage-container">
+      <video id="webcam-video" playsinline autoplay muted></video>
+      <canvas id="skeleton-canvas"></canvas>
+
+      <!-- Capa de Flash -->
+      <div id="flash-layer" class="flash-layer"></div>
+
+      <!-- HUD de Batalla (1P, 2P y 3P) -->
+      <div id="hud-layer" class="overlay-layer" style="display: none;">
+        <!-- Header Superior -->
+        <header class="hud-battle-header">
+          <!-- Pose Objetivo Central Flotante -->
+          <div class="hud-top-bar">
+            <div id="target-card" class="target-center-card">
+              <div id="target-silhouette" class="target-silhouette"></div>
+              <div class="target-info">
+                <div class="target-badge-row">
+                  <span id="target-difficulty" class="target-badge">Fácil</span>
+                  <span id="hud-timer" class="round-timer-badge">12s</span>
+                </div>
+                <h2 id="target-title" class="target-title">El Avión (La T)</h2>
+                <p id="target-desc" class="target-desc">¡Extiende ambos brazos rectos a los lados!</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tarjetas de Puntaje de Jugadores -->
+          <div class="hud-players-row">
+            <!-- Tarjeta Jugador 1 (Azul / Cian) -->
+            <div id="p1-header-card" class="player-score-card p1-card">
+              <span class="player-tag p1-tag">JUGADOR 1</span>
+              <span id="p1-rounds-badge" class="player-rounds-badge">🏆 0 Rondas</span>
+              <span id="p1-score-num" class="player-score-num">0 PTS</span>
+            </div>
+
+            <!-- Tarjeta Jugador 2 (Amarillo / Neón) -->
+            <div id="p2-header-card" class="player-score-card p2-card">
+              <span class="player-tag p2-tag">JUGADOR 2</span>
+              <span id="p2-rounds-badge" class="player-rounds-badge">🏆 0 Rondas</span>
+              <span id="p2-score-num" class="player-score-num">0 PTS</span>
+            </div>
+
+            <!-- Tarjeta Jugador 3 (Rosa / Magenta) -->
+            <div id="p3-header-card" class="player-score-card p3-card">
+              <span class="player-tag p3-tag">JUGADOR 3</span>
+              <span id="p3-rounds-badge" class="player-rounds-badge">🏆 0 Rondas</span>
+              <span id="p3-score-num" class="player-score-num">0 PTS</span>
+            </div>
+          </div>
+        </header>
+
+        <!-- Footer Inferior: Precisión y Anillo de Sostenimiento para P1, P2 y P3 -->
+        <footer class="hud-battle-footer">
+          <!-- Carril P1 (Izquierda) -->
+          <div id="p1-footer-lane" class="player-footer-lane p1-footer">
+            <div class="lane-hold-ring">
+              <svg class="lane-hold-svg" viewBox="0 0 85 85">
+                <circle class="hold-circle-bg" cx="42.5" cy="42.5" r="35"></circle>
+                <circle id="p1-hold-progress" class="hold-circle-progress p1-hold-progress" cx="42.5" cy="42.5" r="35"></circle>
+              </svg>
+              <div id="p1-hold-text" class="lane-hold-text">0%</div>
+            </div>
+            <div class="lane-meter-group">
+              <div class="lane-meter-header">
+                <span style="color: var(--cyan);">P1 (AZUL)</span>
+                <span id="p1-percent-text" style="color: var(--green);">0%</span>
+              </div>
+              <div class="lane-meter-bg">
+                <div id="p1-meter-fill" class="lane-meter-fill p1-meter-fill"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Carril P2 (Centro) -->
+          <div id="p2-footer-lane" class="player-footer-lane p2-footer">
+            <div class="lane-hold-ring">
+              <svg class="lane-hold-svg" viewBox="0 0 85 85">
+                <circle class="hold-circle-bg" cx="42.5" cy="42.5" r="35"></circle>
+                <circle id="p2-hold-progress" class="hold-circle-progress p2-hold-progress" cx="42.5" cy="42.5" r="35"></circle>
+              </svg>
+              <div id="p2-hold-text" class="lane-hold-text">0%</div>
+            </div>
+            <div class="lane-meter-group">
+              <div class="lane-meter-header">
+                <span style="color: var(--yellow);">P2 (AMARILLO)</span>
+                <span id="p2-percent-text" style="color: var(--green);">0%</span>
+              </div>
+              <div class="lane-meter-bg">
+                <div id="p2-meter-fill" class="lane-meter-fill p2-meter-fill"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Carril P3 (Derecha) -->
+          <div id="p3-footer-lane" class="player-footer-lane p3-footer">
+            <div class="lane-meter-group">
+              <div class="lane-meter-header">
+                <span style="color: var(--pink);">P3 (ROSA)</span>
+                <span id="p3-percent-text" style="color: var(--green);">0%</span>
+              </div>
+              <div class="lane-meter-bg">
+                <div id="p3-meter-fill" class="lane-meter-fill p3-meter-fill"></div>
+              </div>
+            </div>
+            <div class="lane-hold-ring">
+              <svg class="lane-hold-svg" viewBox="0 0 85 85">
+                <circle class="hold-circle-bg" cx="42.5" cy="42.5" r="35"></circle>
+                <circle id="p3-hold-progress" class="hold-circle-progress p3-hold-progress" cx="42.5" cy="42.5" r="35"></circle>
+              </svg>
+              <div id="p3-hold-text" class="lane-hold-text">0%</div>
+            </div>
+          </div>
+        </footer>
+      </div>
+
+      <!-- Banner de Punto / Celebración de Ronda -->
+      <div id="success-banner" class="success-banner">
+        ¡PUNTO PARA P1! <br />
+        <span id="success-pts" style="font-size: 28px; color: #ffea00;">+1000 PTS</span>
+      </div>
+
+      <!-- Cuenta Regresiva Gigante -->
+      <div id="countdown-overlay" class="countdown-overlay" style="display: none;">
+        <div id="countdown-text" class="countdown-number">3</div>
+      </div>
+
+      <!-- Pantalla de Atracción / Espera con Selector de Modo -->
+      <div id="attract-screen" class="attract-screen interactive">
+        <h1 class="attract-logo">MIRROR MATCH</h1>
+        <p class="attract-sub">DUELO DE POSES EN PANTALLA GIGANTE BTL</p>
+
+        <!-- Selector de Modo 1P vs 2P vs 3P -->
+        <div class="mode-selector">
+          <button id="mode-solo-btn" class="mode-btn">
+            👤 1 Jugador
+          </button>
+          <button id="mode-vs-btn" class="mode-btn">
+            ⚔️ 2 Jugadores
+          </button>
+          <button id="mode-trio-btn" class="mode-btn active">
+            👑 3 Jugadores (Trío BTL)
+          </button>
+        </div>
+
+        <div class="attract-pulse-box">
+          <div style="font-size: 64px;">⚔️</div>
+          <div id="attract-callout" class="attract-callout">¡PÁRENSE 3 RIVALES!</div>
+        </div>
+
+        <p id="attract-guide-text" style="font-size: 17px; color: #cbd5e1; margin-bottom: 24px; font-weight: 600;">
+          Ubíquense a la izquierda, centro y derecha a 2.5 metros de la pantalla
+        </p>
+
+        <button id="btn-start-game" class="btn-start">
+          ¡INICIAR BATALLA 3P! 🚀
+        </button>
+      </div>
+
+      <!-- Pantalla Final de Podio y Resultados -->
+      <div id="results-screen" class="results-screen interactive" style="display: none;">
+        <h1 id="results-title" style="font-size: 40px; font-weight: 900; color: var(--yellow); margin-bottom: 6px;">
+          👑 ¡JUGADOR 1 GANA LA BATALLA!
+        </h1>
+        <p id="results-subtitle" style="color: #cbd5e1; font-size: 18px; margin-bottom: 16px;">
+          Resumen final del combate y foto de recuerdo
+        </p>
+
+        <img id="result-card-img" class="results-card-preview" alt="Tarjeta de Victoria" />
+
+        <div style="display: flex; gap: 16px;">
+          <a id="btn-download-photo" class="btn-start" style="padding: 12px 28px; font-size: 17px; text-decoration: none; display: inline-block;">
+            📥 Descargar Foto
+          </a>
+          <button id="btn-play-again" class="btn-start" style="padding: 12px 28px; font-size: 17px; background: linear-gradient(135deg, #00ff88, #00f0ff);">
+            🔄 Revancha Inmediata
+          </button>
+        </div>
+
+        <div class="results-timer-bar">
+          <div id="results-timer-fill" class="results-timer-fill"></div>
+        </div>
+        <span id="results-countdown-text" style="font-size: 13px; color: var(--gray); margin-top: 8px;">
+          Volviendo al inicio en 15 segundos...
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
